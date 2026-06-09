@@ -24,6 +24,10 @@ func _ready():
 	Signals.shop_opened.connect(_on_shop_opened)
 	
 	Signals.map_location_selected.connect(_on_map_location_selected)
+
+	var path := "external/sprites/ui/hud/hud_map.png"
+	if FileAccess.file_exists("res://" + path):
+		map_button.texture_normal = FileLoader.load_texture(path)
 	
 func populate_locations(locations: Array[LocationData] = Global.get_all_act_locations()):
 	clear_locations()

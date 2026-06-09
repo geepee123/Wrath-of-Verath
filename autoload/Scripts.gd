@@ -146,6 +146,7 @@ const VALIDATOR_LOCATION_TYPE: String = "res://scripts/validators/ValidatorLocat
 const VALIDATOR_MONEY: String = "res://scripts/validators/ValidatorMoney.gd"
 const VALIDATOR_PLAYER_HEALTH: String = "res://scripts/validators/ValidatorPlayerHealth.gd"
 const VALIDATOR_RNG: String = "res://scripts/validators/ValidatorRNG.gd"
+const VALIDATOR_STATUS_CHARGES: String = "res://scripts/validators/ValidatorStatusCharges.gd"
 
 #endregion
 
@@ -164,4 +165,11 @@ const INTERCEPTOR_NEGATE_DEBUFF: String = "res://scripts/action_interceptors/Int
 # duplicating
 const INTERCEPTOR_DUPLICATE_CARD_PLAYS: String = "res://scripts/action_interceptors/InterceptorDuplicateCardPlays.gd"
 const INTERCEPTOR_DUPLICATE_ATTACKS: String = "res://scripts/action_interceptors/InterceptorDuplicateAttacks.gd"
+#endregion
+
+#region Vanguard
+const ACTION_MOMENTUM_BURST: String = "res://scripts/actions/vanguard/ActionMomentumBurst.gd"
+const ACTION_AFTERBURN: String = "res://scripts/actions/vanguard/ActionAfterburn.gd"
+const ACTION_RETRIBUTION: String = "res://scripts/actions/vanguard/ActionRetribution.gd"
+const ACTION_COUNTERSTRIKE: String = "res://scripts/actions/vanguard/ActionCounterstrike.gd"
 #endregion

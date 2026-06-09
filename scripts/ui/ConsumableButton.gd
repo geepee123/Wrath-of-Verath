@@ -12,17 +12,22 @@ func _ready():
 
 func init(_consumable_slot_index: int):
 	consumable_slot_index = _consumable_slot_index
-	
+
 	var consumable_data: ConsumableData = Global.get_player_consumable_in_slot_index(consumable_slot_index)
 	if consumable_data != null:
-		# set tooltip
 		tooltip_text = consumable_data.consumable_name
 		if consumable_data.consumable_description != "":
 			tooltip_text += "\n" + consumable_data.consumable_description
+		var tex = load(consumable_data.consumable_texture_path)
+		if tex != null:
+			texture_normal = tex
 	else:
 		# empty consumable slot
 		self_modulate.a = 0.3
 		tooltip_text = ""
+		var slot_path := "external/sprites/ui/consumables/consumable_slot.png"
+		if FileAccess.file_exists("res://" + slot_path):
+			texture_normal = FileLoader.load_texture(slot_path)
 	
 
 

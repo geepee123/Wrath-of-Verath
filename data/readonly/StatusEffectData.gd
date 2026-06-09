@@ -34,6 +34,7 @@ enum STATUS_EFFECT_PROCESS_TIMES {
 	PLAYER_END_TURN, # Actions taken after the player has ended their turn but before enemy turns
 	ENEMY_START_TURN, # Actions taken before the enemy has performed an intent
 	ENEMY_END_TURN, # Actions taken after enemy intent
+	ON_DEATH, # Actions taken when the combatant dies — fired by Combat._on_enemy_killed
 	}
 
 ## Indicates when the effect should proc. This can control when and for what entities a status effect applies.

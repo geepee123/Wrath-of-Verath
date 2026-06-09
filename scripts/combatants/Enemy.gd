@@ -3,6 +3,7 @@ class_name Enemy
 
 @onready var enemy_intent: Control = $Visible/Intent
 @onready var enemy_intent_amount_text: Label = $Visible/Intent/IntentAmount
+@onready var intent_texture: TextureRect = $Visible/Intent/IntentTexture
 
 @onready var name_label = $Visible/Sprite/NameLabel
 
@@ -11,6 +12,16 @@ var enemy_slot: int = 0 # the spawn slot the enemy is in
 
 var enemy_intent_attack_damage: int = 0
 var enemy_intent_number_of_attacks: int = 0
+
+enum INTENT_TYPES { ATTACK, BLOCK, ATTACK_BLOCK, BUFF, UNKNOWN }
+
+func _get_intent_texture_path(intent_type: int) -> String:
+	match intent_type:
+		INTENT_TYPES.ATTACK:        return "external/sprites/ui/intent/intent_attack.png"
+		INTENT_TYPES.BLOCK:         return "external/sprites/ui/intent/intent_block.png"
+		INTENT_TYPES.ATTACK_BLOCK:  return "external/sprites/ui/intent/intent_attack_block.png"
+		INTENT_TYPES.BUFF:          return "external/sprites/ui/intent/intent_buff.png"
+		_:                          return "external/sprites/ui/intent/intent_unknown.png"
 
 func init(_enemy_data: EnemyData):
 	enemy_data = _enemy_data
@@ -101,57 +112,70 @@ func cycle_enemy_intent():
 	Signals.enemy_intent_changed.emit()
 
 func update_enemy_intent():
-	# displays the enemy's attack
-	
-	
-	# get current intent's attack
 	var attack_damages: Array = enemy_data.get_current_attack_damages()
 	var attack_damage: int = attack_damages[0]
 	var number_of_attacks: int = attack_damages[1]
-	
+	var block_amount: int = enemy_data.get_current_attack_block()
+	var custom_actions: Array[Dictionary] = enemy_data.get_current_attack_custom_actions()
+
 	var player: Player = Global.get_player()
-	
-	### damage
-	# intercept an attack action in preview mode
+
+	### preview-intercept damage
 	var action_data: Array[Dictionary] = [{
-			Scripts.ACTION_ATTACK: 
-				{
-				"damage": attack_damage,
-				"target_override": BaseAction.TARGET_OVERRIDES.PLAYER
-				}}]
+		Scripts.ACTION_ATTACK: {
+			"damage": attack_damage,
+			"target_override": BaseAction.TARGET_OVERRIDES.PLAYER
+		}}]
 	var generated_action: BaseAction = ActionGenerator.create_actions(self, null, [player], action_data, null)[0]
 	var action_interceptor_processors: Array[ActionInterceptorProcessor] = generated_action._intercept_action([player], true)
-	
 	if len(action_interceptor_processors) == 1:
-		var action_interceptor_processor: ActionInterceptorProcessor = action_interceptor_processors[0]
-		# get intercepted attack values
-		enemy_intent_attack_damage = max(0, action_interceptor_processor.get_shadowed_action_values("damage", 0))
+		enemy_intent_attack_damage = max(0, action_interceptor_processors[0].get_shadowed_action_values("damage", 0))
 
-	
-	### number of attacks
-	# intercept an attack action generator in preview mode
+	### preview-intercept number of attacks
 	action_data = [{
-		Scripts.ACTION_ATTACK_GENERATOR: 
-			{
+		Scripts.ACTION_ATTACK_GENERATOR: {
 			"damage": attack_damage,
 			"number_of_attacks": number_of_attacks,
 			"target_override": BaseAction.TARGET_OVERRIDES.PLAYER
-			}}]
+		}}]
 	generated_action = ActionGenerator.create_actions(self, null, [player], action_data, null)[0]
 	action_interceptor_processors = generated_action._intercept_action([player], true)
-	
 	if len(action_interceptor_processors) == 1:
-		var action_interceptor_processor: ActionInterceptorProcessor = action_interceptor_processors[0]
-		# get intercepted attack values
-		enemy_intent_number_of_attacks = max(0, action_interceptor_processor.get_shadowed_action_values("number_of_attacks", 0))
-	
-	### Display intent
-	enemy_intent.visible = false
-	if enemy_intent_attack_damage * enemy_intent_number_of_attacks > 0:
-		enemy_intent.visible = true
+		enemy_intent_number_of_attacks = max(0, action_interceptor_processors[0].get_shadowed_action_values("number_of_attacks", 0))
+
+	### Determine intent type
+	var is_attacking := enemy_intent_attack_damage > 0 and enemy_intent_number_of_attacks > 0
+	var is_blocking := block_amount > 0
+	var has_custom := not custom_actions.is_empty()
+
+	var intent_type: int
+	if is_attacking and is_blocking:
+		intent_type = INTENT_TYPES.ATTACK_BLOCK
+	elif is_attacking:
+		intent_type = INTENT_TYPES.ATTACK
+	elif is_blocking:
+		intent_type = INTENT_TYPES.BLOCK
+	elif has_custom:
+		intent_type = INTENT_TYPES.BUFF
+	else:
+		intent_type = INTENT_TYPES.UNKNOWN
+
+	### Display
+	var should_show := is_attacking or is_blocking or has_custom
+	enemy_intent.visible = should_show
+	if not should_show:
+		return
+
+	var icon_path := _get_intent_texture_path(intent_type)
+	if FileAccess.file_exists("res://" + icon_path):
+		intent_texture.texture = FileLoader.load_texture(icon_path)
+
+	if is_attacking:
 		enemy_intent_amount_text.text = str(enemy_intent_attack_damage)
 		if enemy_intent_number_of_attacks > 1:
 			enemy_intent_amount_text.text += " x " + str(enemy_intent_number_of_attacks)
+	else:
+		enemy_intent_amount_text.text = ""
 
 func is_alive() -> bool:
 	return enemy_data.enemy_health > 0

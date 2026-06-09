@@ -824,7 +824,26 @@ func add_test_status_effects() -> void:
 	status_effect_corrosion.status_effect_enemy_actions = status_effect_corrosion.status_effect_player_actions.duplicate()
 	
 	register_rod(status_effect_corrosion)
-	
+
+	var status_effect_death_corrosion: StatusEffectData = StatusEffectData.new("status_effect_death_corrosion")
+	status_effect_death_corrosion.status_effect_name = "Death Rattle: Corrosion"
+	status_effect_death_corrosion.status_effect_stacks = false
+	status_effect_death_corrosion.status_effect_decay_rate = 0
+	status_effect_death_corrosion.status_effect_type = StatusEffectData.STATUS_EFFECT_TYPES.NEUTRAL
+	status_effect_death_corrosion.status_effect_is_visible = true
+	status_effect_death_corrosion.status_effect_action_process_times = [
+		StatusEffectData.STATUS_EFFECT_PROCESS_TIMES.ON_DEATH
+	]
+	status_effect_death_corrosion.status_effect_enemy_actions = [{
+		Scripts.ACTION_APPLY_STATUS: {
+			"status_charge_amount": 5,
+			"status_effect_object_id": "status_effect_corrosion",
+			"time_delay": 0.5,
+			"target_override": BaseAction.TARGET_OVERRIDES.ALL_COMBATANTS
+		}
+	}]
+	register_rod(status_effect_death_corrosion)
+
 	# bomb effect that counts down and damages all enemies
 	# uses unique status logic
 	var status_effect_bomb: StatusEffectData = StatusEffectData.new("status_effect_bomb")
@@ -979,8 +998,44 @@ func add_test_status_effects() -> void:
 	status_effect_block_on_special_discard.status_effect_stacks = true
 	status_effect_block_on_special_discard.status_effect_type = StatusEffectData.STATUS_EFFECT_TYPES.BUFF
 	status_effect_block_on_special_discard.status_effect_interceptor_ids = ["interceptor_duplicate_attacks"]
-	
+
 	register_rod(status_effect_block_on_special_discard)
+
+	# Vanguard: stacks on attacks, amplifies finishers, resets to 0 at end of player turn
+	var status_effect_momentum: StatusEffectData = StatusEffectData.new("status_effect_momentum")
+	status_effect_momentum.status_effect_name = "Momentum"
+	status_effect_momentum.status_effect_decay_rate = -999
+	status_effect_momentum.status_effect_stacks = true
+	status_effect_momentum.status_effect_can_be_negative = false
+	status_effect_momentum.status_effect_type = StatusEffectData.STATUS_EFFECT_TYPES.BUFF
+	status_effect_momentum.status_effect_action_process_times = [
+		StatusEffectData.STATUS_EFFECT_PROCESS_TIMES.PLAYER_END_TURN
+	]
+	status_effect_momentum.status_effect_interceptor_ids = []
+
+	register_rod(status_effect_momentum)
+
+	# Vanguard: POWER — grants block at the start of each player turn (secondary charges = block amount)
+	var status_effect_fortress_mode: StatusEffectData = StatusEffectData.new("status_effect_fortress_mode")
+	status_effect_fortress_mode.status_effect_name = "Fortress Mode"
+	status_effect_fortress_mode.status_effect_decay_rate = 0
+	status_effect_fortress_mode.status_effect_stacks = false
+	status_effect_fortress_mode.status_effect_type = StatusEffectData.STATUS_EFFECT_TYPES.BUFF
+	status_effect_fortress_mode.status_effect_action_process_times = [
+		StatusEffectData.STATUS_EFFECT_PROCESS_TIMES.POST_DRAW_PLAYER_START_TURN
+	]
+	status_effect_fortress_mode.status_effect_player_actions = [
+		{
+		Scripts.ACTION_BLOCK: {
+			"custom_key_names": {"block": "invoking_status_effect_secondary_charges"},
+			"time_delay": 0.3,
+			"target_override": BaseAction.TARGET_OVERRIDES.PARENT
+			}
+		}
+	]
+	status_effect_fortress_mode.status_effect_interceptor_ids = []
+
+	register_rod(status_effect_fortress_mode)
 
 func get_status_effect_data(status_effect_object_id: String) -> StatusEffectData:
 	return _id_to_status_data.get(status_effect_object_id, null)
@@ -1403,35 +1458,28 @@ func get_player_character_data() -> CharacterData:
 	return character_data
 
 func add_test_characters() -> void:
-	# red character
+	# Vanguard (Helion Compact) — front-line marine, Momentum build/finisher archetype
 	var character_red: CharacterData = CharacterData.new("character_red")
 	character_red.character_player_id = "player_red"
-	character_red.character_name = "Red Guy"
-	character_red.character_description = "Fought in the red guy wars"
+	character_red.character_name = "Vanguard"
+	character_red.character_description = "Helion Compact front-line marine. Build Momentum with each attack and unleash devastating finishers."
 	character_red.character_color_id = "color_red"
 	character_red.character_starting_artifact_pack_ids = ["artifact_pack_white", "artifact_pack_red"]
-	
 	character_red.character_starting_health = 80
 	character_red.character_texture_path = "external/sprites/characters/character_red/character_red.png"
 	character_red.character_icon_texture_path = "external/sprites/characters/character_red/character_red_icon.png"
 	character_red.character_text_energy_texture_path = "external/sprites/characters/character_red/character_red_text_energy.png"
 	character_red.character_starting_artifact_ids = ["artifact_block_on_attacks"]
 	character_red.character_starting_card_object_ids = [
-		"card_attack_basic", "card_attack_basic", "card_attack_basic",
-		# "card_law", "card_law", "card_law", "card_law",
-		"card_requires_adjacency",
-		"attack_with_conditional_block_card",
-		#"cards_played_attack_card","cards_played_attack_card","cards_played_attack_card",
-		"card_damage_increase", "ignore_damage_increase_attack_card",
-		"card_block_basic", "card_block_basic", "card_block_basic",
-		"card_block_basic", "card_block_basic", "card_block_basic",
-		# "card_attack_in_center", "card_attack_big", "card_block_without_attacks",
-		"card_weaken_enemies", "card_vulnerable_enemies", "card_grant_energy",
-		#"card_add_consumable", "upgrade_entire_deck_card", "attack_increase_cost_on_damage_taken_card",
-		#"card_right_click_transform_mode_a", "card_banish_attack",
+		"vanguard_blitz", "vanguard_blitz", "vanguard_blitz",
+		"vanguard_bulwark", "vanguard_bulwark", "vanguard_bulwark", "vanguard_bulwark",
+		"vanguard_war_cry",
+		"vanguard_momentum_burst",
+		"vanguard_overclock_fists", "vanguard_overclock_fists",
+		"vanguard_absorb",
 	]
 	character_red.character_starting_card_draft_card_pack_ids = ["card_pack_red"]
-	
+
 	register_rod(character_red)
 	
 	# blue character
@@ -1864,12 +1912,7 @@ func add_test_enemies() -> void:
 	enemy_3.enemy_health = 25
 	enemy_3.enemy_name = "Green Enemy"
 	enemy_3.enemy_texture_path = "external/sprites/enemies/enemy_green_small.png"
-	enemy_3.enemy_initial_status_effects = {"status_effect_negate_debuff": 1}
-	enemy_3.enemy_actions_on_death = [
-	{
-	Scripts.ACTION_APPLY_STATUS: {"status_charge_amount": 5, "status_effect_object_id": "status_effect_corrosion", "time_delay": 0.5, "target_override": BaseAction.TARGET_OVERRIDES.ALL_COMBATANTS}
-	}
-	]
+	enemy_3.enemy_initial_status_effects = {"status_effect_negate_debuff": 1, "status_effect_death_corrosion": 1}
 	enemy_3.enemy_difficulty_to_enemy_modfiers = {
 	"1": {
 		"enemy_health": 30,
@@ -1883,11 +1926,7 @@ func add_test_enemies() -> void:
 	enemy_4.enemy_health = 40
 	enemy_4.enemy_name = "Big Attack Enemy"
 	enemy_4.enemy_texture_path = "external/sprites/enemies/enemy_purple_medium.png"
-	enemy_4.enemy_actions_on_death = [
-	{
-	Scripts.ACTION_APPLY_STATUS: {"status_charge_amount": 5, "status_effect_object_id": "status_effect_corrosion", "time_delay": 0.5, "target_override": BaseAction.TARGET_OVERRIDES.ALL_COMBATANTS}
-	}
-	]
+	enemy_4.enemy_initial_status_effects = {"status_effect_death_corrosion": 1}
 	enemy_4.enemy_difficulty_to_enemy_modfiers = {
 	"1": {
 		"enemy_health": 50,
@@ -3929,7 +3968,238 @@ func add_test_cards() -> void:
 	}]
 	
 	register_rod(card_debug_log)
-	
+
+	#region Vanguard Cards
+
+	# --- Surge Striker ---
+
+	# Blitz: basic attack that builds Momentum
+	var vanguard_blitz: CardData = CardData.new("vanguard_blitz")
+	vanguard_blitz.card_name = "Blitz"
+	vanguard_blitz.card_color_id = "color_red"
+	vanguard_blitz.card_texture_path = "external/sprites/cards/red/card_red.png"
+	vanguard_blitz.card_description = "Deal [damage] damage. Gain 1 Momentum."
+	vanguard_blitz.card_type = CardData.CARD_TYPES.ATTACK
+	vanguard_blitz.card_rarity = CardData.CARD_RARITIES.COMMON
+	vanguard_blitz.card_energy_cost = 1
+	vanguard_blitz.card_values = {"damage": 8, "number_of_attacks": 1, "status_charge_amount": 1, "status_effect_object_id": "status_effect_momentum"}
+	vanguard_blitz.card_upgrade_value_improvements = {"damage": 3}
+	vanguard_blitz.card_play_actions = [
+		{Scripts.ACTION_APPLY_STATUS: {"time_delay": 0.0, "target_override": BaseAction.TARGET_OVERRIDES.PARENT}},
+		{Scripts.ACTION_ATTACK_GENERATOR: {"time_delay": 0.0, "actions_on_lethal": []}},
+	]
+
+	register_rod(vanguard_blitz)
+
+	# Chain Strike: attack + Momentum + conditional draw if 3+ Momentum
+	var vanguard_chain_strike: CardData = CardData.new("vanguard_chain_strike")
+	vanguard_chain_strike.card_name = "Chain Strike"
+	vanguard_chain_strike.card_color_id = "color_red"
+	vanguard_chain_strike.card_texture_path = "external/sprites/cards/red/card_red.png"
+	vanguard_chain_strike.card_description = "Deal [damage] damage. Gain 1 Momentum. If [momentum_threshold]+ Momentum, draw 1."
+	vanguard_chain_strike.card_type = CardData.CARD_TYPES.ATTACK
+	vanguard_chain_strike.card_rarity = CardData.CARD_RARITIES.COMMON
+	vanguard_chain_strike.card_energy_cost = 1
+	vanguard_chain_strike.card_values = {"damage": 5, "number_of_attacks": 1, "status_charge_amount": 1, "status_effect_object_id": "status_effect_momentum", "momentum_threshold": 3}
+	vanguard_chain_strike.card_upgrade_value_improvements = {"damage": 3}
+	vanguard_chain_strike.card_play_actions = [
+		{Scripts.ACTION_VALIDATOR: {
+			"validator_data": [{Scripts.VALIDATOR_STATUS_CHARGES: {"status_effect_object_id": "status_effect_momentum", "operator": ">=", "comparison_value": 3}}],
+			"passed_action_data": [{Scripts.ACTION_DRAW_GENERATOR: {"draw_count": 1}}],
+			"failed_action_data": [],
+			"time_delay": 0.0,
+		}},
+		{Scripts.ACTION_APPLY_STATUS: {"time_delay": 0.0, "target_override": BaseAction.TARGET_OVERRIDES.PARENT}},
+		{Scripts.ACTION_ATTACK_GENERATOR: {"time_delay": 0.0, "actions_on_lethal": []}},
+	]
+
+	register_rod(vanguard_chain_strike)
+
+	# Overclock Fists: cheap 0-cost attack that builds Momentum, exhausts
+	var vanguard_overclock_fists: CardData = CardData.new("vanguard_overclock_fists")
+	vanguard_overclock_fists.card_name = "Overclock Fists"
+	vanguard_overclock_fists.card_color_id = "color_red"
+	vanguard_overclock_fists.card_texture_path = "external/sprites/cards/red/card_red.png"
+	vanguard_overclock_fists.card_description = "Deal [damage] damage. Gain 1 Momentum. Exhaust."
+	vanguard_overclock_fists.card_type = CardData.CARD_TYPES.ATTACK
+	vanguard_overclock_fists.card_rarity = CardData.CARD_RARITIES.COMMON
+	vanguard_overclock_fists.card_energy_cost = 0
+	vanguard_overclock_fists.card_exhausts = true
+	vanguard_overclock_fists.card_values = {"damage": 3, "number_of_attacks": 1, "status_charge_amount": 1, "status_effect_object_id": "status_effect_momentum"}
+	vanguard_overclock_fists.card_upgrade_value_improvements = {"damage": 3}
+	vanguard_overclock_fists.card_play_actions = [
+		{Scripts.ACTION_APPLY_STATUS: {"time_delay": 0.0, "target_override": BaseAction.TARGET_OVERRIDES.PARENT}},
+		{Scripts.ACTION_ATTACK_GENERATOR: {"time_delay": 0.0, "actions_on_lethal": []}},
+	]
+
+	register_rod(vanguard_overclock_fists)
+
+	# Momentum Burst: finisher that deals 8x Momentum damage and resets Momentum
+	var vanguard_momentum_burst: CardData = CardData.new("vanguard_momentum_burst")
+	vanguard_momentum_burst.card_name = "Momentum Burst"
+	vanguard_momentum_burst.card_color_id = "color_red"
+	vanguard_momentum_burst.card_texture_path = "external/sprites/cards/red/card_red.png"
+	vanguard_momentum_burst.card_description = "Deal [damage] × Momentum damage. Reset Momentum."
+	vanguard_momentum_burst.card_type = CardData.CARD_TYPES.ATTACK
+	vanguard_momentum_burst.card_rarity = CardData.CARD_RARITIES.UNCOMMON
+	vanguard_momentum_burst.card_energy_cost = 2
+	vanguard_momentum_burst.card_values = {"damage": 8}
+	vanguard_momentum_burst.card_upgrade_value_improvements = {"damage": 2}
+	vanguard_momentum_burst.card_play_actions = [
+		{Scripts.ACTION_MOMENTUM_BURST: {"time_delay": 0.0}},
+	]
+
+	register_rod(vanguard_momentum_burst)
+
+	# War Cry: skill that gains 2 Momentum and draws 1
+	var vanguard_war_cry: CardData = CardData.new("vanguard_war_cry")
+	vanguard_war_cry.card_name = "War Cry"
+	vanguard_war_cry.card_color_id = "color_red"
+	vanguard_war_cry.card_texture_path = "external/sprites/cards/red/card_red.png"
+	vanguard_war_cry.card_description = "Gain [status_charge_amount] Momentum. Draw 1."
+	vanguard_war_cry.card_type = CardData.CARD_TYPES.SKILL
+	vanguard_war_cry.card_rarity = CardData.CARD_RARITIES.COMMON
+	vanguard_war_cry.card_energy_cost = 1
+	vanguard_war_cry.card_requires_target = false
+	vanguard_war_cry.card_values = {"status_charge_amount": 2, "status_effect_object_id": "status_effect_momentum"}
+	vanguard_war_cry.card_upgrade_value_improvements = {"status_charge_amount": 1}
+	vanguard_war_cry.card_play_actions = [
+		{Scripts.ACTION_DRAW_GENERATOR: {"draw_count": 1}},
+		{Scripts.ACTION_APPLY_STATUS: {"time_delay": 0.0, "target_override": BaseAction.TARGET_OVERRIDES.PARENT}},
+	]
+
+	register_rod(vanguard_war_cry)
+
+	# Afterburn: doubles current Momentum, exhausts
+	var vanguard_afterburn: CardData = CardData.new("vanguard_afterburn")
+	vanguard_afterburn.card_name = "Afterburn"
+	vanguard_afterburn.card_color_id = "color_red"
+	vanguard_afterburn.card_texture_path = "external/sprites/cards/red/card_red.png"
+	vanguard_afterburn.card_description = "Double your current Momentum. Exhaust."
+	vanguard_afterburn.card_type = CardData.CARD_TYPES.SKILL
+	vanguard_afterburn.card_rarity = CardData.CARD_RARITIES.UNCOMMON
+	vanguard_afterburn.card_energy_cost = 2
+	vanguard_afterburn.card_requires_target = false
+	vanguard_afterburn.card_exhausts = true
+	vanguard_afterburn.card_values = {}
+	vanguard_afterburn.card_first_upgrade_property_changes = {"card_exhausts": false}
+	vanguard_afterburn.card_play_actions = [
+		{Scripts.ACTION_AFTERBURN: {"time_delay": 0.0}},
+	]
+
+	register_rod(vanguard_afterburn)
+
+	# --- Fortress ---
+
+	# Bulwark: solid block card
+	var vanguard_bulwark: CardData = CardData.new("vanguard_bulwark")
+	vanguard_bulwark.card_name = "Bulwark"
+	vanguard_bulwark.card_color_id = "color_red"
+	vanguard_bulwark.card_texture_path = "external/sprites/cards/red/card_red.png"
+	vanguard_bulwark.card_description = "Gain [block] Block."
+	vanguard_bulwark.card_type = CardData.CARD_TYPES.SKILL
+	vanguard_bulwark.card_rarity = CardData.CARD_RARITIES.COMMON
+	vanguard_bulwark.card_energy_cost = 1
+	vanguard_bulwark.card_requires_target = false
+	vanguard_bulwark.card_values = {"block": 12}
+	vanguard_bulwark.card_upgrade_value_improvements = {"block": 4}
+	vanguard_bulwark.card_play_actions = [
+		{Scripts.ACTION_BLOCK: {"time_delay": 0.3, "target_override": BaseAction.TARGET_OVERRIDES.PARENT}},
+	]
+
+	register_rod(vanguard_bulwark)
+
+	# Retribution: deals damage equal to current Block
+	var vanguard_retribution: CardData = CardData.new("vanguard_retribution")
+	vanguard_retribution.card_name = "Retribution"
+	vanguard_retribution.card_color_id = "color_red"
+	vanguard_retribution.card_texture_path = "external/sprites/cards/red/card_red.png"
+	vanguard_retribution.card_description = "Deal damage equal to your current Block."
+	vanguard_retribution.card_type = CardData.CARD_TYPES.ATTACK
+	vanguard_retribution.card_rarity = CardData.CARD_RARITIES.UNCOMMON
+	vanguard_retribution.card_energy_cost = 1
+	vanguard_retribution.card_values = {}
+	vanguard_retribution.card_first_upgrade_property_changes = {"card_energy_cost": 0}
+	vanguard_retribution.card_play_actions = [
+		{Scripts.ACTION_RETRIBUTION: {"time_delay": 0.0}},
+	]
+
+	register_rod(vanguard_retribution)
+
+	# Iron Shell: heavy block card
+	var vanguard_iron_shell: CardData = CardData.new("vanguard_iron_shell")
+	vanguard_iron_shell.card_name = "Iron Shell"
+	vanguard_iron_shell.card_color_id = "color_red"
+	vanguard_iron_shell.card_texture_path = "external/sprites/cards/red/card_red.png"
+	vanguard_iron_shell.card_description = "Gain [block] Block."
+	vanguard_iron_shell.card_type = CardData.CARD_TYPES.SKILL
+	vanguard_iron_shell.card_rarity = CardData.CARD_RARITIES.UNCOMMON
+	vanguard_iron_shell.card_energy_cost = 2
+	vanguard_iron_shell.card_requires_target = false
+	vanguard_iron_shell.card_values = {"block": 16}
+	vanguard_iron_shell.card_upgrade_value_improvements = {"block": 6}
+	vanguard_iron_shell.card_play_actions = [
+		{Scripts.ACTION_BLOCK: {"time_delay": 0.3, "target_override": BaseAction.TARGET_OVERRIDES.PARENT}},
+	]
+
+	register_rod(vanguard_iron_shell)
+
+	# Counterstrike: deals 4 damage per time player was hit this combat
+	var vanguard_counterstrike: CardData = CardData.new("vanguard_counterstrike")
+	vanguard_counterstrike.card_name = "Counterstrike"
+	vanguard_counterstrike.card_color_id = "color_red"
+	vanguard_counterstrike.card_texture_path = "external/sprites/cards/red/card_red.png"
+	vanguard_counterstrike.card_description = "Deal [damage] damage for each time you've been hit this combat."
+	vanguard_counterstrike.card_type = CardData.CARD_TYPES.ATTACK
+	vanguard_counterstrike.card_rarity = CardData.CARD_RARITIES.UNCOMMON
+	vanguard_counterstrike.card_energy_cost = 0
+	vanguard_counterstrike.card_values = {"damage": 4}
+	vanguard_counterstrike.card_upgrade_value_improvements = {"damage": 2}
+	vanguard_counterstrike.card_play_actions = [
+		{Scripts.ACTION_COUNTERSTRIKE: {"time_delay": 0.0}},
+	]
+
+	register_rod(vanguard_counterstrike)
+
+	# Fortress Mode: POWER — gain block each turn (secondary charges = block amount)
+	var vanguard_fortress_mode: CardData = CardData.new("vanguard_fortress_mode")
+	vanguard_fortress_mode.card_name = "Fortress Mode"
+	vanguard_fortress_mode.card_color_id = "color_red"
+	vanguard_fortress_mode.card_texture_path = "external/sprites/cards/red/card_red.png"
+	vanguard_fortress_mode.card_description = "Gain [status_secondary_charge_amount] Block at the start of each turn."
+	vanguard_fortress_mode.card_type = CardData.CARD_TYPES.POWER
+	vanguard_fortress_mode.card_rarity = CardData.CARD_RARITIES.RARE
+	vanguard_fortress_mode.card_energy_cost = 3
+	vanguard_fortress_mode.card_requires_target = false
+	vanguard_fortress_mode.card_exhausts = true
+	vanguard_fortress_mode.card_values = {"status_charge_amount": 1, "status_secondary_charge_amount": 6, "status_effect_object_id": "status_effect_fortress_mode"}
+	vanguard_fortress_mode.card_upgrade_value_improvements = {"status_secondary_charge_amount": 3}
+	vanguard_fortress_mode.card_play_actions = [
+		{Scripts.ACTION_APPLY_STATUS: {"time_delay": 0.0, "target_override": BaseAction.TARGET_OVERRIDES.PARENT}},
+	]
+
+	register_rod(vanguard_fortress_mode)
+
+	# Absorb: solid block card, cheaper than Iron Shell
+	var vanguard_absorb: CardData = CardData.new("vanguard_absorb")
+	vanguard_absorb.card_name = "Absorb"
+	vanguard_absorb.card_color_id = "color_red"
+	vanguard_absorb.card_texture_path = "external/sprites/cards/red/card_red.png"
+	vanguard_absorb.card_description = "Gain [block] Block."
+	vanguard_absorb.card_type = CardData.CARD_TYPES.SKILL
+	vanguard_absorb.card_rarity = CardData.CARD_RARITIES.COMMON
+	vanguard_absorb.card_energy_cost = 1
+	vanguard_absorb.card_requires_target = false
+	vanguard_absorb.card_values = {"block": 8}
+	vanguard_absorb.card_upgrade_value_improvements = {"block": 4}
+	vanguard_absorb.card_play_actions = [
+		{Scripts.ACTION_BLOCK: {"time_delay": 0.3, "target_override": BaseAction.TARGET_OVERRIDES.PARENT}},
+	]
+
+	register_rod(vanguard_absorb)
+
+	#endregion
+
 func add_test_cards_to_player_deck() -> void:
 	# Adds copies of cards to the player's deck to populate it
 	player_data.player_deck.append(get_card_data_from_prototype("card_attack_basic"))

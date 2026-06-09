@@ -9,6 +9,10 @@ func _ready() -> void:
 	
 	Signals.game_paused.connect(_on_game_paused)
 	Signals.game_unpaused.connect(_on_game_unpaused)
+
+	var path := "external/sprites/ui/hud/hud_pause.png"
+	if FileAccess.file_exists("res://" + path):
+		texture_normal = FileLoader.load_texture(path)
 	
 func _on_pause_button_pressed() -> void:
 	Global.pause_game()

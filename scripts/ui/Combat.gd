@@ -73,6 +73,16 @@ func _ready():
 	
 	Signals.map_location_selected.connect(_on_map_location_selected)
 
+	_load_hud_texture(energy,           "external/sprites/ui/hud/hud_energy.png")
+	_load_hud_texture(draw_pile_button, "external/sprites/ui/hud/hud_draw_pile.png")
+	_load_hud_texture(discard_pile_button, "external/sprites/ui/hud/hud_discard_pile.png")
+	_load_hud_texture(exhaust_pile_button, "external/sprites/ui/hud/hud_exhaust_pile.png")
+	_load_hud_texture(deck_button,      "external/sprites/ui/hud/hud_deck.png")
+
+func _load_hud_texture(button: TextureButton, path: String) -> void:
+	if FileAccess.file_exists("res://" + path):
+		button.texture_normal = FileLoader.load_texture(path)
+
 func _on_map_location_selected(location_data: LocationData):
 	# determine what to do when the player visits a new location
 	var location_type: int = location_data.location_type
@@ -173,6 +183,7 @@ func _on_exhaust_pile_button_up():
 ### Turn Handling
 
 func _on_enemy_killed(enemy: Enemy):
+	enemy.perform_status_effect_actions(StatusEffectData.STATUS_EFFECT_PROCESS_TIMES.ON_DEATH)
 	var generated_actions: Array[BaseAction] = ActionGenerator.create_actions(enemy, null, [], enemy.enemy_data.enemy_actions_on_death, null)
 	ActionHandler.add_actions(generated_actions)
 	
