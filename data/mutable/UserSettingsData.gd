@@ -16,6 +16,9 @@ class_name UserSettingsData
 @export var settings_audio_music_volume: int = 10
 @export var settings_audio_effects_volume: int = 10
 
+## Display
+@export var settings_crt_enabled: bool = false
+
 func _get_native_properties() -> Dictionary:
 	return {
 		"settings_window_size": Vector2()

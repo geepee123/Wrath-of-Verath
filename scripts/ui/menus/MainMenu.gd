@@ -15,6 +15,8 @@ func _ready():
 	forfeit_run_button.button_up.connect(_on_forfeit_run_button_up)
 	new_run_button.button_up.connect(_on_new_run_button_up)
 	codex_button.button_up.connect(_on_codex_button_up)
+	settings_button.disabled = false
+	settings_button.button_up.connect(CRTOverlay.open_options)
 	exit_button.button_up.connect(_on_exit_button_up)
 	
 	Signals.run_ended.connect(_on_run_ended)
