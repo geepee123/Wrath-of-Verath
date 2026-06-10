@@ -16,7 +16,7 @@ func _ready() -> void:
 	Signals.game_unpaused.connect(_on_game_unpaused)
 
 	var options_btn := Button.new()
-	options_btn.text = "Options"
+	options_btn.text = "Game Options"
 	options_btn.pressed.connect(CRTOverlay.open_options)
 	var btn_container: VBoxContainer = resume_button.get_parent()
 	btn_container.add_child(options_btn)
